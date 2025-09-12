@@ -32,13 +32,13 @@ const MobileNav = ({user}: MobileNavProps) => {
             <SheetContent className="bg-white border-none" side='left'>
                 <SheetTitle className="sr-only">Navigation menu</SheetTitle>
                 <Link href='/' className='cursor-pointer flex items-center gap-1 px-4'>
-                <Image
-                    src='/icons/logo.svg'
-                    alt='Kleva logo'
-                    width={34}
-                    height={34}
-                />
-                <h1 className='text-26 font-ibm-plex-serif font-bold text-black-1'>Kleva</h1>
+                    <Image
+                        src='/icons/logo.svg'
+                        alt='Kleva logo'
+                        width={34}
+                        height={34}
+                    />
+                    <h1 className='text-26 font-ibm-plex-serif font-bold text-black-1'>Kleva</h1>
                 </Link>
                 <div className="mobile-nav-sheet">
                     <SheetClose asChild>

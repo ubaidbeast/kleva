@@ -2,6 +2,8 @@
 import { type ClassValue, clsx } from "clsx";
 import qs from "query-string";
 import { twMerge } from "tailwind-merge";
+import z from "zod";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -193,3 +195,21 @@ export const getTransactionStatus = (date: Date) => {
 
   return date > twoDaysAgo ? "Processing" : "Success";
 };
+
+//validate phone number
+const phoneSchema = z.string().refine((val) => {
+    try {
+      const phoneNumber = parsePhoneNumberFromString(val); // no hardcoded country
+      return phoneNumber?.isValid();
+    } catch {
+      return false;
+    }
+  }, { message: "Invalid phone number" });
+
+export const authFormSchema = (type: string) => z.object({
+  firstName: type === 'sign-in' ? z.string().optional() : z.string().min(2, { message: "First name must be at least 2 characters long" }),
+  lastName: type === 'sign-in' ? z.string().optional() : z.string().min(2, { message: "Last name must be at least 2 characters long" }),
+  phone: type === 'sign-in' ? phoneSchema.optional() : phoneSchema,
+  email: z.email({ message: "Invalid email address" }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters long" }),
+})
