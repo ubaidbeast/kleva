@@ -113,24 +113,6 @@ declare type AddFundingSourceParams = {
   bankName: string;
 };
 
-declare type NewDwollaCustomerParams = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  type: string;
-  address1: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  dateOfBirth: string;
-  ssn: string;
-};
-
-declare interface CreditCardProps {
-  account: Account;
-  userName: string;
-  showBalance?: boolean;
-}
 
 declare interface BankInfoProps {
   account: Account;
@@ -298,12 +280,9 @@ declare interface exchangePublicTokenProps {
 }
 
 declare interface createBankAccountProps {
-  accessToken: string;
   userId: string;
   accountId: string;
   bankId: string;
-  fundingSourceUrl: string;
-  sharableId: string;
 }
 
 declare interface getBanksProps {
