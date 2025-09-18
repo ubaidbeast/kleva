@@ -21,51 +21,56 @@ import CustomInputs from './CustomInputs'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { signIn, signUp } from '@/lib/actions/user.actions'
+import MonoConnectButton from './MonoConnwctButton'
 
-const AuthForm = ({ type }: {type: string}) => {
-    const router = useRouter();
-    const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const formSchema = authFormSchema(type);
+interface User {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  $id?: string;
+}
 
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            firstName: type === 'sign-in' ? undefined : "",
-            lastName: type === 'sign-in' ? undefined : "",
-            phone: type === 'sign-in' ? undefined : "",
-            email: "",
-            password: "",
-        },
-    })
- 
-  // 2. Define a submit handler.
+const AuthForm = ({ type }: { type: string }) => {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const formSchema = authFormSchema(type);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: type === "sign-in" ? undefined : "",
+      lastName: type === "sign-in" ? undefined : "",
+      phone: type === "sign-in" ? undefined : "",
+      email: "",
+      password: "",
+    },
+  });
+
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-
     try {
-
-        if (type === 'sign-up') {
-            const newUser = await signUp(data);
-            setUser(newUser);
-        }
-
-        if (type === 'sign-in') {
-            const response = await signIn({
-                email: data.email,
-                password: data.password,
-            })
-
-            if (response) router.push('/');
-        }
-    } catch (error) {
-        console.log(error);
+      if (type === "sign-up") {
+        const newUser = await signUp(data);
+        setUser(newUser);
+        console.log(user);
         
-    } finally {
-        setIsLoading(false);
-    }
+      }
 
+      if (type === "sign-in") {
+        const response = await signIn({
+          email: data.email,
+          password: data.password,
+        });
+
+        if (response) router.push("/");
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -91,7 +96,7 @@ const AuthForm = ({ type }: {type: string}) => {
         </header>
         {user ? (
             <div className='flex flex-col gap-4'>
-                {/* User is logged in, show account linking options */}
+                <MonoConnectButton name={`${user?.firstName} ${user?.lastName}`} email={user?.email!} docId={user?.$id!} />
             </div>
         )
         :
