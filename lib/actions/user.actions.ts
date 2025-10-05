@@ -1,12 +1,13 @@
 'use server'
 
-import { ID } from "node-appwrite";
-import { createAdminClient, createSessionClient } from "../appwrite";
+
 import { cookies } from "next/headers";
 import { parseStringify } from "../utils";
 import { get } from "http";
 import { access } from "fs";
 import { create } from "domain";
+import { createAdminClient, createSessionClient } from "../appwrite";
+import { ID, Query } from "node-appwrite";
 
 const {
     APPWRITE_DATABASE_ID: DATABASE_ID,
@@ -14,13 +15,29 @@ const {
     APPWRITE_BANK_COLLECTION_ID: BANK_COLLECTION_ID,
 } = process.env;
 
+export const getUserInfo = async ({ userId }: getUserInfoProps) => {
+  try {
+    const { database } = await createAdminClient();
+
+    const user = await database.listDocuments(
+      DATABASE_ID!,
+      USER_COLLECTION_ID!,
+      [Query.equal('userId', [userId])]
+    )
+
+    return parseStringify(user.documents[0]);
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 export const signIn = async ({ email, password }:  signInProps) => {
     try {
         const { account } = await createAdminClient();
-        const response = await account.createEmailPasswordSession({
+        const response = await account.createEmailPasswordSession(
             email,
-            password
-        });
+            password,
+        );
 
         (await cookies()).set("appwrite-session", response.secret, {
             path: "/",
@@ -29,17 +46,19 @@ export const signIn = async ({ email, password }:  signInProps) => {
             secure: true,
         });
 
+        const user = await getUserInfo({ userId: response.userId });
 
-        return parseStringify(response);
+
+        return parseStringify(user);
     } catch (error) {
         console.log('Error', error);
     }
 }
 
-export const signUp = async (userData: SignUpParams) => {
+export const signUp = async ({password, ...userData}: SignUpParams) => {
     let newUserAccount;
 
-    const { firstName, lastName, email, password} = userData;
+    const { firstName, lastName, email} = userData;
     try {
          const { account, database } = await createAdminClient();
 
@@ -59,16 +78,15 @@ export const signUp = async (userData: SignUpParams) => {
           {
               ...userData,
               userId: newUserAccount.$id,
-              monoCustomerId: "",
           }
         );
 
         if(!newUser) throw new Error('Error creating user document');
 
-        const session = await account.createEmailPasswordSession({
+        const session = await account.createEmailPasswordSession(
             email,
             password
-        });
+        );
 
         (await cookies()).set("appwrite-session", session.secret, {
             path: "/",
@@ -84,44 +102,11 @@ export const signUp = async (userData: SignUpParams) => {
     } 
 }
 
-export const saveMonoAccountId = async (docId: string, accountId: string) => {
-  try {
-    const { database } = await createAdminClient();
-
-    // Debugging: Log the inputs
-    console.log("Updating document with docId:", docId);
-    console.log("DATABASE_ID:", DATABASE_ID);
-    console.log("USER_COLLECTION_ID:", USER_COLLECTION_ID);
-
-    // Check if the document exists
-    const existingDocument = await database.getDocument(
-      DATABASE_ID!,
-      USER_COLLECTION_ID!,
-      docId
-    );
-    console.log("Existing document:", existingDocument);
-
-    // Update the document
-    const updatedUser = await database.updateDocument(
-      DATABASE_ID!,
-      USER_COLLECTION_ID!,
-      docId,
-      { monoCustomerId: accountId }
-    );
-
-    return updatedUser;
-  } catch (err) {
-    console.error("Error saving Mono customer ID:", err);
-    throw err;
-  }
-};
-
-// ... your initilization functions
-
 export async function getLoggedInUser() {
   try {
     const { account } = await createSessionClient();
-    const user = await account.get();
+    const result = await account.get();
+    const user = await getUserInfo({ userId: result.$id });
 
     return parseStringify(user);
   } catch (error) {
@@ -141,30 +126,75 @@ export const logOutAccount = async () => {
     }
 }
 
-export const createBankAccount = async ({
-    userId,
-    bankId,
-    accountId,
-}: createBankAccountProps) => {
-    try {
-        const { database } = await createAdminClient();
+export async function getAccountDetails(accountId: string) {
+  try {
+    const res = await fetch(`https://api.withmono.com/v2/accounts/${accountId}`, {
+      headers: { "mono-sec-key": process.env.MONO_SECRET_KEY! },
+      cache: "no-store",
+    });
 
-        const bankAccount = await database.createDocument(
-            DATABASE_ID!,
-            BANK_COLLECTION_ID!,
-            ID.unique(),
-            {
-                userId,
-                bankId,
-                accountId,
-            }
-        )
-
-        return parseStringify(bankAccount);
-    } catch (error) {
-        
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      console.error("Mono account details error:", errData);
+      throw new Error("Failed to fetch account details");
     }
+
+    return res.json();
+  } catch (err) {
+    console.error("Network/Unexpected error:", err);
+    throw new Error("Unable to fetch account details");
+  }
 }
+
+export const createBankAccount = async ({
+  accessToken,
+  docId,
+  email,
+  firstName,
+  lastName,
+  phone,
+}: createBankAccountProps) => {
+  try {
+    // Fetch account details from Mono API
+    const account = await getAccountDetails(accessToken);
+
+    // Validate the account details
+    if (!account || !account.data) {
+      throw new Error("Invalid account details received from Mono API");
+    }
+
+    const { account: bankAccount, customer } = account.data;
+
+    if (!bankAccount || !customer) {
+      throw new Error("Missing account or customer details in Mono API response");
+    }
+
+    // Ensure environment variables are defined
+    if (!DATABASE_ID || !BANK_COLLECTION_ID) {
+      throw new Error("Missing DATABASE_ID or BANK_COLLECTION_ID in environment variables");
+    }
+    
+    // Create the bank account document in Appwrite
+    const { database } = await createAdminClient();
+    const newBankAccount = await database.createDocument(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      ID.unique(),
+      {
+        userId: docId,
+        accesstoken: accessToken,
+        bankId: bankAccount.id,
+        accountId: customer.id,
+      }
+    );
+
+    console.log("Bank account created in Appwrite:", newBankAccount);
+    return parseStringify(newBankAccount);
+  } catch (error) {
+    console.error("Error creating bank account:", error); // Log the error
+    throw new Error("Failed to create bank account"); // Rethrow the error
+  }
+};
 
 export async function initiateMonoLinking(name: string, email: string) {
   const MONO_SECRET_KEY = process.env.MONO_SECRET_KEY;
@@ -219,22 +249,55 @@ export async function exchangeMonoCode(code: string) {
   return data; // e.g. { id: "...", user: "...", ... }
 }
 
-export async function getAccountDetails(accountId: string) {
+export const getBanks = async ({ userId }: getBanksProps) => {
   try {
-    const res = await fetch(`https://api.withmono.com/v2/accounts/${accountId}`, {
-      headers: { "mono-sec-key": process.env.MONO_SECRET_KEY! },
-      cache: "no-store",
-    });
+    const { database } = await createAdminClient();
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      console.error("Mono account details error:", errData);
-      throw new Error("Failed to fetch account details");
-    }
+    // Query the userId field directly with the document ID
+    const banks = await database.listDocuments(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      [Query.equal('userId', [userId])] // Pass the userId directly
+    );
 
-    return res.json();
-  } catch (err) {
-    console.error("Network/Unexpected error:", err);
-    throw new Error("Unable to fetch account details");
+    console.log("Banks found:", banks.documents); // Debugging
+    return parseStringify(banks.documents);
+  } catch (error) {
+    console.error("Error in getBanks:", error);
+  }
+};
+
+export const getBank = async ({ documentId }: getBankProps) => {
+  try {
+    const { database } = await createAdminClient();
+
+    const bank = await database.listDocuments(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      [Query.equal('$id', [documentId])]
+    )
+
+    return parseStringify(bank.documents[0]);
+  } catch (error) {
+    console.log(error)
   }
 }
+
+export const getBankByAccountId = async ({ accountId }: getBankByAccountIdProps) => {
+  try {
+    const { database } = await createAdminClient();
+
+    const bank = await database.listDocuments(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      [Query.equal('accountId', [accountId])]
+    )
+
+    if(bank.total !== 1) return null;
+
+    return parseStringify(bank.documents[0]);
+  } catch (error) {
+    console.log(error)
+  }
+}
+

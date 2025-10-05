@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React from 'react'
 import Footer from './Footer'
+import MonoConnectButton from './MonoConnwctButton'
 
 const Sidebar = ({user} : SidebarProps) => {
   const pathName = usePathname();
@@ -38,7 +39,8 @@ const Sidebar = ({user} : SidebarProps) => {
             </Link>
           )
         })}
-        USER
+        
+        <MonoConnectButton user={user}/>
       </nav>
       <Footer user={user}/>
     </section>

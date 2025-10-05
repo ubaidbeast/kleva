@@ -24,11 +24,10 @@ declare type User = {
   $id: string;
   email: string;
   userId: string;
-  dwollaCustomerUrl: string;
-  dwollaCustomerId: string;
+  phone: string;
   firstName: string;
   lastName: string;
-  name: string;
+  name?: string;
 };
 
 declare type NewUserParams = {
@@ -40,7 +39,7 @@ declare type NewUserParams = {
 
 declare type Account = {
   id: string;
-  availableBalance: number;
+  balance: number;
   currentBalance: number;
   officialName: string;
   mask: string;
@@ -75,7 +74,7 @@ declare type Bank = {
   $id: string;
   accountId: string;
   bankId: string;
-  accessToken: string;
+  accesstoken: string;
   fundingSourceUrl: string;
   userId: string;
   sharableId: string;
@@ -242,6 +241,7 @@ declare interface getInstitutionProps {
 
 declare interface getTransactionsProps {
   accessToken: string;
+  account_id: string;
 }
 
 declare interface CreateFundingSourceOptions {
@@ -280,9 +280,12 @@ declare interface exchangePublicTokenProps {
 }
 
 declare interface createBankAccountProps {
-  userId: string;
-  accountId: string;
-  bankId: string;
+  accessToken: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  docId: string;
 }
 
 declare interface getBanksProps {

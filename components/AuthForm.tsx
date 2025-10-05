@@ -23,13 +23,6 @@ import { useRouter } from 'next/navigation'
 import { signIn, signUp } from '@/lib/actions/user.actions'
 import MonoConnectButton from './MonoConnwctButton'
 
-interface User {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  $id?: string;
-}
-
 const AuthForm = ({ type }: { type: string }) => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -70,6 +63,7 @@ const AuthForm = ({ type }: { type: string }) => {
       console.log(error);
     } finally {
       setIsLoading(false);
+      
     }
   }
 
@@ -96,7 +90,7 @@ const AuthForm = ({ type }: { type: string }) => {
         </header>
         {user ? (
             <div className='flex flex-col gap-4'>
-                <MonoConnectButton name={`${user?.firstName} ${user?.lastName}`} email={user?.email!} docId={user?.$id!} />
+                <MonoConnectButton user={user} variant="primary"/>
             </div>
         )
         :

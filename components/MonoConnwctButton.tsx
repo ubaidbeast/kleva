@@ -1,66 +1,88 @@
-    import { useState, useCallback } from "react";
-    import Connect from '@mono.co/connect.j'
-    import { exchangeMonoCode, getAccountDetails, initiateMonoLinking, saveMonoAccountId } from "@/lib/actions/user.actions";
-    import { redirect } from "next/dist/server/api-utils";
+import { useState, useCallback } from "react";
+import Connect from '@mono.co/connect.j'
+import { createBankAccount, exchangeMonoCode, getAccountDetails, initiateMonoLinking, saveMonoAccountId } from "@/lib/actions/user.actions";
+import { Button } from "./ui/button";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-    export default function MonoConnectButton({ name, email, docId }: {name: string, email: string, docId: string}) {
-    const [scriptLoaded, setScriptLoaded] = useState(false);
-    const [accountId, setAccountId] = useState<string | null>(null);
-    const [accountDetails, setAccountDetails] = useState<any>(null);
+export default function MonoConnectButton({ user, variant }: { user: User, variant?: 'primary' | 'ghost' | 'default' }) {
+  const {firstName, lastName, email, $id: docId, phone} = user
+  const name = `${firstName} ${lastName}`;
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const router = useRouter();
 
-    const openMonoWidget = useCallback(async () => {
-        const MonoConnect = (await import("@mono.co/connect.js")).default;
-        const { init_code } = await initiateMonoLinking(name, email);
-        
-        const monoInstance = new MonoConnect({
-          key: "test_pk_f2psjofae83hpf8yepwq",
-          onClose: () => console.log("Widget closed"),
-          onLoad: () => setScriptLoaded(true),
-          onSuccess: async ({ code } : {code: string}) => {
-              console.log(`Linked successfully: ${code}`)
+  const openMonoWidget = useCallback(async () => {
+      const MonoConnect = (await import("@mono.co/connect.js")).default;
+      const { init_code } = await initiateMonoLinking(name, email);
+      
+      const monoInstance = new MonoConnect({
+        key: "test_pk_f2psjofae83hpf8yepwq",
+        onClose: () => console.log("Widget closed"),
+        onLoad: () => setScriptLoaded(true),
+        onSuccess: async ({ code } : {code: string}) => {
+            console.log(`Linked successfully: ${code}`)
 
-              try {
-              const result = await exchangeMonoCode(code);
-              console.log("Server result:", result);
-              setAccountId(result.data.id);
-              await saveMonoAccountId(docId, accountId!);
-              // save account id
-              } catch (err) {
+            try {
+            const result = await exchangeMonoCode(code);
+            console.log("Server result:", result);
+            
+            const bank = await createBankAccount({ docId, accessToken: result.data.id, email, firstName, lastName, phone });
+
+            console.log("Bank account created:", bank);
+
+            // Show success toast
+            toast.success("Success!",{
+              description: "Your bank account has been linked successfully.",
+            });
+            router.push('/');
+            // save account id
+            } catch (err) {
               console.error("Exchange failed:", err);
-              }
-          },
-        });
 
-        monoInstance.setup();
-        monoInstance.open(init_code);
-    }, [email, name]);
+              // Show error toast
+              toast.error("Error", {
+                description: "Failed to link your bank account. Please try again.",
+              });
+            }
+        },
+      });
 
-    const fetchDetails = async () => {
-    if (!accountId) return;
-    try {
-      const details = await getAccountDetails(accountId); // server action
-      setAccountDetails(details);
-      console.log("Account details:", details);
-    } catch (err) {
-      console.error("Failed to fetch account details:", err);
-    }
-  };
+      monoInstance.setup();
+      monoInstance.open(init_code);
+  }, [email, name, docId]);
 
-    return (
-        <div>
-            <button onClick={openMonoWidget}>Link a financial account</button>
-            {accountId && (
-                <>
-                <p>Linked account ID: {accountId}</p>
-                <p>Account Name: {name}</p>
-                <p>Account Email: {email}</p>
-                <p>Document ID: {docId}</p>
-                <button onClick={fetchDetails}>Get Account Details</button>
-                </>
-            )}
-            {accountDetails && (
-                <pre>{JSON.stringify(accountDetails, null, 2)}</pre>
-            )}
-    </div>
-    );
-    }
+  return (
+      <>
+      {variant === 'primary' ? (
+        <Button
+          onClick={() => openMonoWidget()}
+          disabled={scriptLoaded}
+          className="plaidlink-primary"
+        >
+          Connect bank
+        </Button>
+      ): variant === 'ghost' ? (
+        <Button onClick={() => openMonoWidget()} variant="ghost" className="plaidlink-ghost">
+          <Image 
+            src="/icons/connect-bank.svg"
+            alt="connect bank"
+            width={24}
+            height={24}
+          />
+          <p className='hiddenl text-[16px] font-semibold text-black-2 xl:block'>Connect bank</p>
+        </Button>
+      ): (
+        <Button onClick={() => openMonoWidget()} className="plaidlink-default">
+          <Image 
+            src="/icons/connect-bank.svg"
+            alt="connect bank"
+            width={24}
+            height={24}
+          />
+          <p className='text-[16px] font-semibold text-black-2'>Connect bank</p>
+        </Button>
+      )}
+  </>
+  );
+}
