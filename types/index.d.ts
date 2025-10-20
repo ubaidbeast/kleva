@@ -53,9 +53,8 @@ declare type Account = {
 
 declare type Transaction = {
   id: string;
-  $id: string;
+  $id?: string;
   name: string;
-  paymentChannel: string;
   type: string;
   accountId: string;
   amount: number;
@@ -65,9 +64,6 @@ declare type Transaction = {
   image: string;
   type: string;
   $createdAt: string;
-  channel: string;
-  senderBankId: string;
-  receiverBankId: string;
 };
 
 declare type Bank = {
@@ -94,6 +90,12 @@ declare type CategoryCount = {
   count: number;
   totalCount: number;
 };
+
+declare interface CreditCardProps {
+  account: Account;
+  userName: string;
+  showBalance?: boolean;
+}
 
 declare type Receiver = {
   firstName: string;
@@ -224,6 +226,7 @@ declare interface DoughnutChartProps {
 
 declare interface PaymentTransferFormProps {
   accounts: Account[];
+  userId: string;
 }
 
 // Actions

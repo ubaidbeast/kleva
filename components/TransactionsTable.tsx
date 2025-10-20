@@ -10,7 +10,7 @@ import {
 import { transactionCategoryStyles } from "@/constants"
 import { cn, formatAmount, formatDateTime, getTransactionStatus, removeSpecialCharacters } from "@/lib/utils"
 
-const CategoryBadge = ({ category }: { category: string }) => {
+export const CategoryBadge = ({ category }: { category: string }) => {
     const { borderColor, backgroundColor, textColor,chipBackgroundColor } = transactionCategoryStyles[category as keyof typeof transactionCategoryStyles] || transactionCategoryStyles.default
 
     return (

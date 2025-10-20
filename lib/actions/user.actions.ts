@@ -13,6 +13,7 @@ const {
     APPWRITE_DATABASE_ID: DATABASE_ID,
     APPWRITE_USER_COLLECTION_ID: USER_COLLECTION_ID,
     APPWRITE_BANK_COLLECTION_ID: BANK_COLLECTION_ID,
+    APPWRITE_TRANSACTION_COLLECTION_ID: TRANSACTION_COLLECTION_ID,
 } = process.env;
 
 export const getUserInfo = async ({ userId }: getUserInfoProps) => {
@@ -82,6 +83,11 @@ export const signUp = async ({password, ...userData}: SignUpParams) => {
         );
 
         if(!newUser) throw new Error('Error creating user document');
+
+        // Automatically create a “Cash” bank
+        await createManualBankAccount(newUser.$id);
+        console.log( "the new user account id is ",newUser.$id);
+        
 
         const session = await account.createEmailPasswordSession(
             email,
@@ -196,6 +202,25 @@ export const createBankAccount = async ({
   }
 };
 
+export const createManualBankAccount = async (userId: string) => {
+  const { database } = await createAdminClient();
+
+  const newBankAccount = await database.createDocument(
+    DATABASE_ID!,
+    BANK_COLLECTION_ID!,
+    ID.unique(),
+    {
+      userId,
+      accesstoken: "none",
+      bankId: "manual-cash",
+      accountId: `cash-${userId}`,
+    }
+  );
+
+  console.log("Manual cash bank created:", newBankAccount);
+  return parseStringify(newBankAccount);
+};
+
 export async function initiateMonoLinking(name: string, email: string) {
   const MONO_SECRET_KEY = process.env.MONO_SECRET_KEY;
   if (!MONO_SECRET_KEY) throw new Error("Missing MONO_SECRET_KEY");
@@ -260,8 +285,15 @@ export const getBanks = async ({ userId }: getBanksProps) => {
       [Query.equal('userId', [userId])] // Pass the userId directly
     );
 
-    console.log("Banks found:", banks.documents); // Debugging
-    return parseStringify(banks.documents);
+     // Sort so "manual-cash" is always last
+    const orderedBanks = banks.documents.sort((a, b) => {
+      if (a.bankId === "manual-cash") return 1;  // move manual-cash down
+      if (b.bankId === "manual-cash") return -1; // move manual-cash up
+      return 0;
+    });
+
+    console.log("Banks found:", orderedBanks); // Debugging
+    return parseStringify(orderedBanks);
   } catch (error) {
     console.error("Error in getBanks:", error);
   }
@@ -300,4 +332,71 @@ export const getBankByAccountId = async ({ accountId }: getBankByAccountIdProps)
     console.log(error)
   }
 }
+
+export const getTransactionsByBankId = async ({ bankId }: { bankId: string }) => {
+  try {
+    // Make sure env variables exist
+    if (!DATABASE_ID || !TRANSACTION_COLLECTION_ID) {
+      throw new Error("Missing DATABASE_ID or TRANSACTION_COLLECTION_ID");
+    }
+
+    // Create Appwrite admin client
+    const { database } = await createAdminClient();
+
+    // Fetch all transactions that belong to this bankId
+    const transactions = await database.listDocuments(
+      DATABASE_ID!,
+      TRANSACTION_COLLECTION_ID!,
+      [
+        Query.equal("bankId", bankId),
+        Query.orderDesc("$createdAt"), // latest first
+      ]
+    );
+
+    return parseStringify(transactions);
+  } catch (error) {
+    console.error("Error fetching transactions by bankId:", error);
+    throw new Error("Failed to fetch transactions by bankId");
+  }
+};
+
+export const createManualTransaction = async ({
+  userId,
+  bankId,
+  name,
+  amount,
+  type,
+  category,
+}: {
+  userId: string;
+  bankId: string;
+  name: string;
+  amount: number;
+  type: string;
+  category?: string;
+}) => {
+  try {
+    const { database } = await createAdminClient();
+
+    const newTransaction = await database.createDocument(
+      DATABASE_ID!,
+      TRANSACTION_COLLECTION_ID!,
+      ID.unique(),
+      {
+        userId,
+        bankId,
+        name,
+        amount,
+        type,
+        category: category || "General",
+      }
+    );
+
+    return newTransaction;
+  } catch (error) {
+    console.error("Error creating manual transaction:", error);
+    throw new Error("Failed to create manual transaction");
+  }
+};
+
 

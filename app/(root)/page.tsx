@@ -8,22 +8,19 @@ import { getLoggedInUser } from '@/lib/actions/user.actions'
 import React from 'react'
 
 const Home = async ({searchParams: {id, page}}: SearchParamProps) => {
-  const currentPage = (page as string) || 1;
+  const currentPage = Number(page as string) || 1;
   const loggedIn = await getLoggedInUser();
   const accounts = await getAccounts({ userId: loggedIn?.$id!});
 
    if(!accounts) return;
 
-  const accountsData = accounts?.data;
-  console.log(accountsData);
-  
+  const accountsData = accounts?.data;  
   
   const appwriteItemId = (id as string) || accounts?.data[0].appwriteItemId;
   console.log('appwriteitem',appwriteItemId);
-   
-  const account = await getAccount({ appwriteItemId })
-
-  console.log(account);
+   const account = await getAccount({ appwriteItemId })
+  console.log("accounts", accounts);
+  console.log("account", account);
 
   return (
     <section className='home'>

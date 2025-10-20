@@ -32,7 +32,7 @@ export default function MonoConnectButton({ user, variant }: { user: User, varia
             console.log("Bank account created:", bank);
 
             // Show success toast
-            toast.success("Success!",{
+            toast.info("Success!",{
               description: "Your bank account has been linked successfully.",
             });
             router.push('/');
@@ -80,7 +80,7 @@ export default function MonoConnectButton({ user, variant }: { user: User, varia
             width={24}
             height={24}
           />
-          <p className='text-[16px] font-semibold text-black-2'>Connect bank</p>
+          <p className='text-[16px] hidden xl:block font-semibold text-black-2'>Connect bank</p>
         </Button>
       )}
   </>
