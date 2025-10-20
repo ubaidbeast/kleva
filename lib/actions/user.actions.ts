@@ -52,7 +52,8 @@ export const signIn = async ({ email, password }:  signInProps) => {
 
         return parseStringify(user);
     } catch (error) {
-        console.log('Error', error);
+        console.error('Error during sign-in:', error);
+        throw error; // Rethrow the error
     }
 }
 

@@ -8,14 +8,7 @@ import { set, z } from "zod"
 import { Button } from "@/components/ui/button"
 import {
   Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { authFormSchema } from '@/lib/utils'
 import CustomInputs from './CustomInputs'
 import { Loader2 } from 'lucide-react'
@@ -27,6 +20,7 @@ const AuthForm = ({ type }: { type: string }) => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const formSchema = authFormSchema(type);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -42,6 +36,7 @@ const AuthForm = ({ type }: { type: string }) => {
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
+    setError(null);
 
     try {
       if (type === "sign-up") {
@@ -59,8 +54,9 @@ const AuthForm = ({ type }: { type: string }) => {
 
         if (response) router.push("/");
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.log("error is ", error.message);
+      setError(error?.message || "An unexpected error occurred.");
     } finally {
       setIsLoading(false);
       
@@ -109,6 +105,11 @@ const AuthForm = ({ type }: { type: string }) => {
                         )}
                         <CustomInputs control={form.control} name="email" label="Email" placeholder="Enter your email"/>
                         <CustomInputs control={form.control} name="password" label="Password" placeholder="Enter your password"/>
+                        {error && (
+                            <p className='text-red-600 text-14 text-sm'>
+                                {error}
+                            </p>
+                        )}
                         <div className='flex flex-col gap-4'>
                             <Button type="submit" disabled={isLoading} className='form-btn'>
                                 {isLoading ? (
