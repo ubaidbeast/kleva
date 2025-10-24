@@ -30,7 +30,7 @@ const TransactionsTable = ({transactions}: TransactionTableProps) => {
                 <TableHead className="px-2">Amount</TableHead>
                 <TableHead className="px-2">Status</TableHead>
                 <TableHead className="px-2">Date</TableHead>
-                <TableHead className="px-2 max-md:hidden">Category</TableHead>
+                <TableHead className="px-2">Category</TableHead>
             </TableRow>
         </TableHeader>
         <TableBody>
