@@ -80,7 +80,7 @@ export default function MonoConnectButton({ user, variant }: { user: User, varia
             width={24}
             height={24}
           />
-          <p className='text-[16px] hidden xl:block font-semibold text-black-2'>Connect bank</p>
+           <p className="text-[16px] font-semibold text-black-2 block xl:block md:hidden">Connect bank</p>
         </Button>
       )}
   </>
