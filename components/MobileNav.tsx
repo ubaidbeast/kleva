@@ -14,6 +14,7 @@ import Image from "next/image"
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Footer from "./Footer";
+import MonoConnectButton from "./MonoConnwctButton";
 
 const MobileNav = ({user}: MobileNavProps) => {
 
@@ -61,7 +62,7 @@ const MobileNav = ({user}: MobileNavProps) => {
                                         </SheetClose>
                                 )
                             })}
-                            User
+                            <MonoConnectButton user={user}/>
                         </nav>
                     </SheetClose>
                     <Footer user={user} type='mobile'/>
