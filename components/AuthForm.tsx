@@ -14,7 +14,6 @@ import CustomInputs from './CustomInputs'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { signIn, signUp } from '@/lib/actions/user.actions'
-import MonoConnectButton from './MonoConnwctButton'
 import { toast } from 'sonner'
 
 const AuthForm = ({ type }: { type: string }) => {
@@ -131,14 +130,14 @@ const AuthForm = ({ type }: { type: string }) => {
                     </form>
                 </Form>
 
-                <footer className='flex justify-center gap-1'>
+                {/* <footer className='flex justify-center gap-1'>
                     <p className='text-14 font-normal text-gray-600'>
                         {type === 'sign-in' ? "Don't have an account?" : "Already have an account?"}
                     </p>
                     <Link href={type === 'sign-in' ? '/sign-up' : '/sign-in'} className='form-link'>
                         {type === 'sign-in' ? 'Sign Up' : 'Sign In'}
                     </Link>
-                </footer>
+                </footer> */}
             </>
         {/* )
     } */}
