@@ -1,6 +1,7 @@
+"use client"
 import { useState, useCallback } from "react";
 import Connect from '@mono.co/connect.j'
-import { createBankAccount, exchangeMonoCode, getAccountDetails, initiateMonoLinking, saveMonoAccountId } from "@/lib/actions/user.actions";
+import { createBankAccount, exchangeMonoCode, getAccountDetails, initiateMonoLinking } from "@/lib/actions/user.actions";
 import { Button } from "./ui/button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";

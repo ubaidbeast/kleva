@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { signIn, signUp } from '@/lib/actions/user.actions'
 import MonoConnectButton from './MonoConnwctButton'
+import { toast } from 'sonner'
 
 const AuthForm = ({ type }: { type: string }) => {
   const router = useRouter();
@@ -52,7 +53,13 @@ const AuthForm = ({ type }: { type: string }) => {
           password: data.password,
         });
 
-        if (response) router.push("/");
+        if (response) {
+            router.push("/")
+            toast.info("Success!",{
+              description: "You've logged in successfully.",
+            });
+            
+        }
       }
     } catch (error: any) {
       console.log("error is ", error.message);
@@ -84,13 +91,13 @@ const AuthForm = ({ type }: { type: string }) => {
                 </h1>
             </div>
         </header>
-        {user ? (
+        {/* {user ? (
             <div className='flex flex-col gap-4'>
                 <MonoConnectButton user={user} variant="primary"/>
             </div>
         )
         :
-        (
+        ( */}
             <>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -133,8 +140,8 @@ const AuthForm = ({ type }: { type: string }) => {
                     </Link>
                 </footer>
             </>
-        )
-    }
+        {/* )
+    } */}
     </section>
   )
 }
