@@ -18,7 +18,7 @@ export default function MonoConnectButton({ user, variant }: { user: User, varia
       const { init_code } = await initiateMonoLinking(name, email);
       
       const monoInstance = new MonoConnect({
-        key: "test_pk_f2psjofae83hpf8yepwq",
+        key: process.env.NEXT_PUBLIC_MONO_PUBLIC_KEY as string,
         onClose: () => console.log("Widget closed"),
         onLoad: () => setScriptLoaded(true),
         onSuccess: async ({ code } : {code: string}) => {

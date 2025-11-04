@@ -201,7 +201,7 @@ export const getTransactions = async ({
       console.log("Fetched page:", data.meta?.page);
 
       // Map transactions
-      const pageTransactions = data.data.map((transaction: any) => ({
+      const pageTransactions = data.data?.map((transaction: any) => ({
         id: transaction.id,
         name: transaction.narration,
         type: transaction.type,
